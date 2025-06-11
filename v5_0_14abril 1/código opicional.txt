@@ -1,0 +1,175 @@
+// Definição dos pinos para a primeira ponte H
+#define ENA_A 2  // PWM
+#define IN1_A 3
+#define IN2_A 4
+#define IN3_A 5
+#define IN4_A 6
+#define ENB_A 7 // PWM
+
+// Definição dos pinos para a segunda ponte H
+#define ENA_B 8  // PWM
+#define IN1_B 9
+#define IN2_B 10
+#define IN4_B 11
+#define IN3_B 12
+#define ENB_B 13 // PWM  
+
+// Função de rampa simples:
+// Varia a velocidade dos motores de startSpeed até targetSpeed
+// step: incremento/decremento a cada iteração
+// delayTime: tempo de espera (ms) entre os passos
+void rampa(int startSpeed, int targetSpeed, int step, int delayTime) {
+  if (targetSpeed > startSpeed) {
+    for (int speed = startSpeed; speed <= targetSpeed; speed += step) {
+      analogWrite(ENA_A, speed);
+      analogWrite(ENB_A, speed);
+      analogWrite(ENA_B, speed);
+      analogWrite(ENB_B, speed);
+      delay(delayTime);
+    }
+  } else {
+    for (int speed = startSpeed; speed >= targetSpeed; speed -= step) {
+      analogWrite(ENA_A, speed);
+      analogWrite(ENB_A, speed);
+      analogWrite(ENA_B, speed);
+      analogWrite(ENB_B, speed);
+      delay(delayTime);
+    }
+  }
+}
+
+// Função para parar os motores de forma suave
+void stopAll() {
+  // Desacelera suavemente até 0
+  rampa(150, 0, 10, 20);
+  // Desativa os sinais das direções
+  digitalWrite(IN1_A, LOW);
+  digitalWrite(IN2_A, LOW);
+  digitalWrite(IN3_A, LOW);
+  digitalWrite(IN4_A, LOW);
+  digitalWrite(IN1_B, LOW);
+  digitalWrite(IN2_B, LOW);
+  digitalWrite(IN3_B, LOW);
+  digitalWrite(IN4_B, LOW);
+}
+
+void setup() {
+  // Configuração dos pinos como saída
+  pinMode(ENA_A, OUTPUT);
+  pinMode(IN1_A, OUTPUT);
+  pinMode(IN2_A, OUTPUT);
+  pinMode(IN3_A, OUTPUT);
+  pinMode(IN4_A, OUTPUT);
+  pinMode(ENB_A, OUTPUT);
+  
+  pinMode(ENA_B, OUTPUT);
+  pinMode(IN1_B, OUTPUT);
+  pinMode(IN2_B, OUTPUT);
+  pinMode(IN3_B, OUTPUT);
+  pinMode(IN4_B, OUTPUT);
+  pinMode(ENB_B, OUTPUT);
+
+  Serial.begin(9600);
+}
+
+// Movimento para frente com aceleração e desaceleração integradas
+// velocidadeAlvo: velocidade desejada (0 a 255)
+// tempoMovimento: tempo em milissegundos em que o robô permanece em movimento
+void move_Fwd(int velocidadeAlvo, int tempoMovimento) {
+  // Configura a direção para frente
+  digitalWrite(IN1_A, HIGH);
+  digitalWrite(IN4_A, HIGH);
+  digitalWrite(IN2_B, HIGH);
+  digitalWrite(IN3_B, HIGH);
+  
+  // Acelera de 0 até a velocidadeAlvo
+  rampa(0, velocidadeAlvo, 10, 20);
+  // Mantém o movimento
+  delay(tempoMovimento);
+  // Desacelera até 0
+  rampa(velocidadeAlvo, 0, 10, 20);
+  stopAll();
+}
+
+// Movimento para trás
+void move_Bwd(int velocidadeAlvo, int tempoMovimento) {
+  digitalWrite(IN2_A, HIGH);
+  digitalWrite(IN3_A, HIGH);
+  digitalWrite(IN1_B, HIGH);
+  digitalWrite(IN4_B, HIGH);
+  
+  rampa(0, velocidadeAlvo, 10, 20);
+  delay(tempoMovimento);
+  rampa(velocidadeAlvo, 0, 10, 20);
+  stopAll();
+}
+
+// Movimento para a esquerda
+void move_Left(int velocidadeAlvo, int tempoMovimento) {
+  digitalWrite(IN1_A, HIGH);
+  digitalWrite(IN3_A, HIGH);
+  digitalWrite(IN4_B, HIGH);
+  digitalWrite(IN2_B, HIGH);
+  
+  rampa(0, velocidadeAlvo, 10, 20);
+  delay(tempoMovimento);
+  rampa(velocidadeAlvo, 0, 10, 20);
+  stopAll();
+}
+
+// Movimento para a direita
+void move_Right(int velocidadeAlvo, int tempoMovimento) {
+  digitalWrite(IN2_A, HIGH);
+  digitalWrite(IN4_A, HIGH);
+  digitalWrite(IN3_B, HIGH);
+  digitalWrite(IN1_B, HIGH);
+  
+  rampa(0, velocidadeAlvo, 10, 20);
+  delay(tempoMovimento);
+  rampa(velocidadeAlvo, 0, 10, 20);
+  stopAll();
+}
+
+// Giro à esquerda com aceleração e desaceleração
+// degrees: ângulo desejado (ajuste experimental)
+void turnLeft(int velocidadeAlvo, int degrees) {
+  int tempo = (degrees * 10) / velocidadeAlvo;  // Fator experimental para o delay
+  digitalWrite(IN1_A, HIGH);
+  digitalWrite(IN4_A, HIGH);
+  digitalWrite(IN1_B, HIGH);
+  digitalWrite(IN4_B, HIGH);
+  
+  rampa(0, velocidadeAlvo, 10, 20);
+  delay(tempo * 140);
+  rampa(velocidadeAlvo, 0, 10, 20);
+  stopAll();
+}
+
+// Giro à direita com aceleração e desaceleração
+void turnRight(int velocidadeAlvo, int degrees) {
+  int tempo = (degrees * 10) / velocidadeAlvo;
+  digitalWrite(IN2_A, HIGH);
+  digitalWrite(IN3_A, HIGH);
+  digitalWrite(IN2_B, HIGH);
+  digitalWrite(IN3_B, HIGH);
+  
+  rampa(0, velocidadeAlvo, 10, 20);
+  delay(tempo * 140);
+  rampa(velocidadeAlvo, 0, 10, 20);
+  stopAll();
+}
+
+void loop() {
+  move_Fwd(150, 2000);  // Move para frente com velocidade 150 por 2 segundos
+  delay(3000);
+  move_Bwd(150, 2000);  // Move para trás
+  delay(3000);
+  move_Left(150, 2000); // Move para a esquerda
+  delay(3000);
+  move_Right(150, 2000); // Move para a direita
+  delay(3000);
+  turnLeft(150, 90);    // Gira à esquerda 90°
+  delay(3000);
+  turnRight(150, 90);   // Gira à direita 90°
+  delay(3000);
+}
